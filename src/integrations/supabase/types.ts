@@ -14,16 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pitches: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          latitude: number
+          location: string
+          longitude: number
+          name: string
+          photo_url: string | null
+          price_per_hour: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude: number
+          location: string
+          longitude: number
+          name: string
+          photo_url?: string | null
+          price_per_hour: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude?: number
+          location?: string
+          longitude?: number
+          name?: string
+          photo_url?: string | null
+          price_per_hour?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          last_login: string | null
+          name: string
+          phone: string
+          surname: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id: string
+          last_login?: string | null
+          name?: string
+          phone?: string
+          surname?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          last_login?: string | null
+          name?: string
+          phone?: string
+          surname?: string
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          end_hour: number
+          id: string
+          payment_percentage: number
+          pitch_id: string
+          reservation_date: string
+          start_hour: number
+          status: string
+          total_cost: number
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          end_hour: number
+          id?: string
+          payment_percentage?: number
+          pitch_id: string
+          reservation_date: string
+          start_hour: number
+          status?: string
+          total_cost: number
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          end_hour?: number
+          id?: string
+          payment_percentage?: number
+          pitch_id?: string
+          reservation_date?: string
+          start_hour?: number
+          status?: string
+          total_cost?: number
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: false
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +295,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
