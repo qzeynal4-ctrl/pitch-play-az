@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, MapPin, Clock } from "lucide-react";
+import { X, MapPin, Clock, CreditCard, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Pitch = {
@@ -29,7 +29,7 @@ type Reservation = {
   user_id: string;
 };
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 8); // 08..22
+const HOURS = Array.from({ length: 15 }, (_, i) => i + 8);
 
 export function PitchSidebar({
   pitch,
@@ -48,7 +48,8 @@ export function PitchSidebar({
   const [loading, setLoading] = useState(false);
   const [reserveSlot, setReserveSlot] = useState<number | null>(null);
   const [paymentPct, setPaymentPct] = useState(40);
-  const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState<"summary" | "card" | "processing" | "done">("summary");
+  const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvc: "" });
 
   useEffect(() => {
     if (!pitch) return;
@@ -77,14 +78,31 @@ export function PitchSidebar({
     }
     setReserveSlot(hour);
     setPaymentPct(40);
+    setStep("summary");
+    setCard({ number: "", holder: "", expiry: "", cvc: "" });
   };
 
   const total = pitch.price_per_hour;
   const amount = ((total * paymentPct) / 100).toFixed(2);
 
+  const formatCardNumber = (v: string) =>
+    v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+  const formatExpiry = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+  };
+
+  const cardValid =
+    card.number.replace(/\s/g, "").length >= 13 &&
+    card.holder.trim().length >= 2 &&
+    /^\d{2}\/\d{2}$/.test(card.expiry) &&
+    /^\d{3,4}$/.test(card.cvc);
+
   const submitReservation = async () => {
     if (reserveSlot == null || !user) return;
-    setSubmitting(true);
+    setStep("processing");
+    // Simulate payment
+    await new Promise((r) => setTimeout(r, 1400));
     const { error } = await supabase.from("reservations").insert({
       user_id: user.id,
       pitch_id: pitch.id,
@@ -97,14 +115,13 @@ export function PitchSidebar({
       status: "confirmed",
       user_name: profile?.name || user.email?.split("@")[0] || "User",
     });
-    setSubmitting(false);
     if (error) {
       toast.error(error.message);
+      setStep("card");
       return;
     }
-    toast.success(t("bookingConfirmed"));
-    setReserveSlot(null);
-    // refetch
+    setStep("done");
+    toast.success(t("paymentSuccess"));
     const { data } = await supabase
       .from("reservations")
       .select("id,start_hour,user_name,user_id")
@@ -209,32 +226,93 @@ export function PitchSidebar({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="rounded-lg bg-accent p-3 text-sm">
-              <div className="flex justify-between"><span>{t("user")}</span><span className="font-medium">{profile?.name} {profile?.surname}</span></div>
-              <div className="flex justify-between"><span>{t("phone")}</span><span className="font-medium">{profile?.phone || "—"}</span></div>
-              <div className="mt-2 flex justify-between border-t pt-2"><span>{t("total")}</span><span className="font-bold text-primary">{total} AZN</span></div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <Label>{t("paymentAmount")}</Label>
-                <span className="font-bold text-primary">{paymentPct}% • {amount} AZN</span>
+          {step === "summary" && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-accent p-3 text-sm">
+                <div className="flex justify-between"><span>{t("user")}</span><span className="font-medium">{profile?.name} {profile?.surname}</span></div>
+                <div className="flex justify-between"><span>{t("phone")}</span><span className="font-medium">{profile?.phone || "—"}</span></div>
+                <div className="mt-2 flex justify-between border-t pt-2"><span>{t("total")}</span><span className="font-bold text-primary">{total} AZN</span></div>
               </div>
-              <Slider
-                value={[paymentPct]}
-                onValueChange={(v) => setPaymentPct(v[0])}
-                min={40}
-                max={100}
-                step={5}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">{t("deposit")}: 40% min</p>
-            </div>
 
-            <Button onClick={submitReservation} disabled={submitting} className="w-full">
-              {submitting ? "…" : `${t("payNow")} ${amount} AZN`}
-            </Button>
-          </div>
+              <div>
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <Label>{t("paymentAmount")}</Label>
+                  <span className="font-bold text-primary">{paymentPct}% • {amount} AZN</span>
+                </div>
+                <Slider value={[paymentPct]} onValueChange={(v) => setPaymentPct(v[0])} min={40} max={100} step={5} />
+                <p className="mt-1 text-xs text-muted-foreground">{t("deposit")}: 40% min</p>
+              </div>
+
+              <Button onClick={() => setStep("card")} className="w-full">
+                <CreditCard className="mr-2 h-4 w-4" /> {t("payNow")} {amount} AZN
+              </Button>
+            </div>
+          )}
+
+          {step === "card" && (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-gradient-to-br from-primary to-primary/70 p-4 text-primary-foreground shadow">
+                <div className="text-xs opacity-80">{t("cardDetails")}</div>
+                <div className="mt-2 font-mono text-lg tracking-wider">
+                  {card.number || "•••• •••• •••• ••••"}
+                </div>
+                <div className="mt-3 flex justify-between text-xs">
+                  <span>{card.holder.toUpperCase() || "FULL NAME"}</span>
+                  <span>{card.expiry || "MM/YY"}</span>
+                </div>
+              </div>
+
+              <div>
+                <Label>{t("cardNumber")}</Label>
+                <Input
+                  inputMode="numeric"
+                  placeholder="4242 4242 4242 4242"
+                  value={card.number}
+                  onChange={(e) => setCard({ ...card, number: formatCardNumber(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label>{t("cardHolder")}</Label>
+                <Input value={card.holder} onChange={(e) => setCard({ ...card, holder: e.target.value })} placeholder="Ad Soyad" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>{t("expiry")}</Label>
+                  <Input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: formatExpiry(e.target.value) })} placeholder="12/28" />
+                </div>
+                <div>
+                  <Label>{t("cvc")}</Label>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={card.cvc}
+                    onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/\D/g, "") })}
+                    placeholder="123"
+                  />
+                </div>
+              </div>
+
+              <Button onClick={submitReservation} disabled={!cardValid} className="w-full">
+                {t("payNow")} {amount} AZN
+              </Button>
+            </div>
+          )}
+
+          {step === "processing" && (
+            <div className="py-10 text-center">
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="mt-4 text-sm text-muted-foreground">{t("processing")}</p>
+            </div>
+          )}
+
+          {step === "done" && (
+            <div className="py-8 text-center">
+              <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
+              <h3 className="mt-3 text-lg font-bold">{t("paymentSuccess")}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t("bookingConfirmed")}</p>
+              <Button className="mt-5 w-full" onClick={() => setReserveSlot(null)}>OK</Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

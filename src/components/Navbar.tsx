@@ -3,7 +3,15 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, MapPin, Calendar, Shield } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, MapPin, Calendar, Shield, Menu, User, Settings } from "lucide-react";
 
 export function Navbar() {
   const { t, lang, setLang } = useI18n();
@@ -56,30 +64,47 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="flex overflow-hidden rounded-md border text-xs font-medium">
-            <button
-              onClick={() => setLang("az")}
-              className={`px-2 py-1 ${lang === "az" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
-            >
-              🇦🇿 AZ
-            </button>
-            <button
-              onClick={() => setLang("en")}
-              className={`px-2 py-1 ${lang === "en" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
-            >
-              🇬🇧 EN
-            </button>
-          </div>
+          <button
+            onClick={() => setLang(lang === "az" ? "en" : "az")}
+            className="rounded-md border px-2 py-1 text-xs font-semibold hover:bg-accent"
+            title="Language"
+          >
+            {lang === "az" ? "AZ" : "EN"} / {lang === "az" ? "EN" : "AZ"}
+          </button>
 
           {user ? (
-            <>
-              <span className="hidden text-sm text-muted-foreground md:inline">
-                {profile?.name || user.email?.split("@")[0]}
-              </span>
-              <Button variant="ghost" size="icon" onClick={logout} title={t("logout")}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title={t("profile")}>
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-[1100] w-56">
+                <DropdownMenuLabel>
+                  <div className="text-sm font-semibold">{profile?.name || user.email?.split("@")[0]}</div>
+                  <div className="truncate text-xs font-normal text-muted-foreground">{user.email}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
+                  <User className="mr-2 h-4 w-4" /> {t("profile")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/profile", search: { tab: "settings" } as never })}>
+                  <Settings className="mr-2 h-4 w-4" /> {t("profileSettings")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/my-reservations" })}>
+                  <Calendar className="mr-2 h-4 w-4" /> {t("myReservations")}
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate({ to: "/admin" })}>
+                    <Shield className="mr-2 h-4 w-4" /> {t("admin")}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" /> {t("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <>
               <Link to="/login">
