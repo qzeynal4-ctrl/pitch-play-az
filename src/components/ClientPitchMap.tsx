@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 
 type PitchLike = { id: string; name: string; latitude: number; longitude: number };
 
@@ -15,7 +15,7 @@ export function ClientPitchMap<T extends PitchLike>(props: {
   if (!mounted) {
     return <div className="grid h-full w-full place-items-center bg-muted text-sm text-muted-foreground">…</div>;
   }
-  const Map = InnerMap as unknown as (p: typeof props) => JSX.Element;
+  const Map = InnerMap as unknown as (p: typeof props) => React.ReactElement;
   return (
     <Suspense fallback={<div className="grid h-full w-full place-items-center bg-muted text-sm text-muted-foreground">…</div>}>
       <Map {...props} />
