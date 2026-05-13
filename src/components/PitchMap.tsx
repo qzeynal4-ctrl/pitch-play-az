@@ -17,7 +17,7 @@ const pitchIcon = L.divIcon({
   iconAnchor: [18, 36],
 });
 
-type Pitch = { id: string; name: string; latitude: number; longitude: number };
+type PitchLike = { id: string; name: string; latitude: number; longitude: number };
 
 function FlyTo({ center }: { center: [number, number] | null }) {
   const map = useMap();
@@ -27,13 +27,13 @@ function FlyTo({ center }: { center: [number, number] | null }) {
   return null;
 }
 
-export function PitchMap({
+export function PitchMap<T extends PitchLike>({
   pitches,
   onSelect,
   selectedId,
 }: {
-  pitches: Pitch[];
-  onSelect: (p: Pitch) => void;
+  pitches: T[];
+  onSelect: (p: T) => void;
   selectedId?: string | null;
 }) {
   const selected = pitches.find((p) => p.id === selectedId);
