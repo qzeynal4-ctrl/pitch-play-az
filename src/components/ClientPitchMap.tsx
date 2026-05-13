@@ -15,9 +15,10 @@ export function ClientPitchMap<T extends PitchLike>(props: {
   if (!mounted) {
     return <div className="grid h-full w-full place-items-center bg-muted text-sm text-muted-foreground">…</div>;
   }
+  const Map = InnerMap as unknown as (p: typeof props) => JSX.Element;
   return (
     <Suspense fallback={<div className="grid h-full w-full place-items-center bg-muted text-sm text-muted-foreground">…</div>}>
-      <InnerMap {...props} />
+      <Map {...props} />
     </Suspense>
   );
 }
