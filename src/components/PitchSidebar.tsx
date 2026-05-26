@@ -98,12 +98,23 @@ export function PitchSidebar({
     /^\d{3,4}$/.test(card.cvc);
 
   const submitReservation = async () => {
-    if (reserveSlot == null || !user) return;
+    if (reserveSlot == null) return;
     setStep("processing");
-    // Simulate payment
+    // Demo: simulate card payment bypass
     await new Promise((r) => setTimeout(r, 1400));
+    // Guest demo: synthesise a stable per-browser uuid so reservations persist & display
+    let guestId = typeof window !== "undefined" ? window.localStorage.getItem("demo_guest_id") : null;
+    if (!guestId) {
+      guestId = crypto.randomUUID();
+      if (typeof window !== "undefined") window.localStorage.setItem("demo_guest_id", guestId);
+    }
+    const uid = user?.id ?? guestId;
+    const displayName =
+      (profile?.name && `${profile.name} ${profile?.surname ?? ""}`.trim()) ||
+      user?.email?.split("@")[0] ||
+      (card.holder.trim() || "Qonaq istifadəçi");
     const { error } = await supabase.from("reservations").insert({
-      user_id: user.id,
+      user_id: uid,
       pitch_id: pitch.id,
       reservation_date: date,
       start_hour: reserveSlot,
@@ -112,8 +123,14 @@ export function PitchSidebar({
       payment_percentage: paymentPct,
       amount_paid: Number(amount),
       status: "confirmed",
-      user_name: profile?.name || user.email?.split("@")[0] || "User",
+      user_name: displayName,
     });
+    if (error) {
+      toast.error(error.message);
+      setStep("card");
+      return;
+    }
+
     if (error) {
       toast.error(error.message);
       setStep("card");
