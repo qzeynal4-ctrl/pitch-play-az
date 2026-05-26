@@ -322,23 +322,42 @@ function Admin() {
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingPitch({})}><Plus className="mr-1 h-4 w-4" />{t("addPitch")}</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                   <DialogHeader><DialogTitle>{editingPitch?.id ? t("edit") : t("addPitch")}</DialogTitle></DialogHeader>
                   {editingPitch && (
                     <div className="space-y-2">
                       <div><Label>{t("name")}</Label><Input value={editingPitch.name || ""} onChange={(e) => setEditingPitch({...editingPitch, name: e.target.value})} /></div>
                       <div><Label>{t("location")}</Label><Input value={editingPitch.location || ""} onChange={(e) => setEditingPitch({...editingPitch, location: e.target.value})} /></div>
+
+                      <div>
+                        <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t("pickOnMap")}</Label>
+                        <ClientOnly>
+                          <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
+                            <PitchPickerMap
+                              lat={editingPitch.latitude ?? null}
+                              lng={editingPitch.longitude ?? null}
+                              onPick={(lat, lng) => setEditingPitch({ ...editingPitch, latitude: lat, longitude: lng })}
+                            />
+                          </Suspense>
+                        </ClientOnly>
+                        <p className="mt-1 text-xs text-muted-foreground">{t("clickMapHint")}</p>
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div><Label>{t("latitude")}</Label><Input type="number" step="0.0001" value={editingPitch.latitude ?? ""} onChange={(e) => setEditingPitch({...editingPitch, latitude: Number(e.target.value)})} /></div>
                         <div><Label>{t("longitude")}</Label><Input type="number" step="0.0001" value={editingPitch.longitude ?? ""} onChange={(e) => setEditingPitch({...editingPitch, longitude: Number(e.target.value)})} /></div>
                       </div>
                       <div><Label>{t("pricePerHour")} (AZN)</Label><Input type="number" value={editingPitch.price_per_hour ?? ""} onChange={(e) => setEditingPitch({...editingPitch, price_per_hour: Number(e.target.value)})} /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>{t("managerName")}</Label><Input value={editingPitch.manager_name || ""} onChange={(e) => setEditingPitch({...editingPitch, manager_name: e.target.value})} placeholder="Elvin Məmmədov" /></div>
+                        <div><Label>{t("managerPhone")}</Label><Input value={editingPitch.manager_phone || ""} onChange={(e) => setEditingPitch({...editingPitch, manager_phone: e.target.value})} placeholder="+994 50 123 45 67" /></div>
+                      </div>
                       <div><Label>{t("photoUrl")}</Label><Input value={editingPitch.photo_url || ""} onChange={(e) => setEditingPitch({...editingPitch, photo_url: e.target.value})} /></div>
                       <div><Label>{t("description")}</Label><Input value={editingPitch.description || ""} onChange={(e) => setEditingPitch({...editingPitch, description: e.target.value})} /></div>
                       <Button onClick={savePitch} className="w-full">{t("save")}</Button>
                     </div>
                   )}
                 </DialogContent>
+
               </Dialog>
             </div>
             <div className="overflow-x-auto rounded-xl border bg-card">
