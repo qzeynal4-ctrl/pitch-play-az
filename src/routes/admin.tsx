@@ -36,7 +36,6 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
 }
 
 function Admin() {
-  const { isAdmin, loading } = useAuth();
   const { t } = useI18n();
   const [users, setUsers] = useState<Profile[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -62,7 +61,18 @@ function Admin() {
     setEntries((e as Entry[]) || []);
   };
 
-  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+  useEffect(() => {
+    load();
+    // Real-time refresh: any insert/update on reservations or balance entries refetches.
+    const ch = supabase
+      .channel("admin-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_balance_entries" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "pitches" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const today = new Date().toISOString().slice(0, 10);
   const activeResvs = useMemo(() => resvs.filter((r) => r.status !== "cancelled"), [resvs]);
@@ -83,20 +93,7 @@ function Admin() {
     return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
   }, [pitches, activeResvs]);
 
-  if (loading) return <div className="p-8">…</div>;
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-xl font-bold">Forbidden</h1>
-            <Link to="/" className="mt-2 inline-block text-primary underline">Go home</Link>
-          </div>
-        </main>
-      </div>
-    );
-  }
+
 
   const filteredUsers = users.filter(u => `${u.name} ${u.surname} ${u.email} ${u.phone}`.toLowerCase().includes(search.toLowerCase()));
   const filteredResvs = resvs.filter(r => `${r.user_name} ${r.pitches?.name}`.toLowerCase().includes(search.toLowerCase()));
