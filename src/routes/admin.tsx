@@ -1,23 +1,27 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarCheck, Users, DollarSign, Clock, Plus, Trash2, Pencil, Wallet, TrendingUp, BarChart3, Eye } from "lucide-react";
+import { CalendarCheck, Users, DollarSign, Plus, Trash2, Pencil, Wallet, TrendingUp, BarChart3, Eye, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { ClientOnly } from "@/components/ClientOnly";
+import { lazy, Suspense } from "react";
+
+const PitchPickerMap = lazy(() => import("@/components/PitchPickerMap").then(m => ({ default: m.PitchPickerMap })));
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
 type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null };
-type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null };
+type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null; manager_name?: string; manager_phone?: string };
 type Resv = { id: string; pitch_id: string; user_id: string; reservation_date: string; start_hour: number; end_hour: number; total_cost: number; amount_paid: number; payment_percentage: number; status: string; user_name: string; pitches: { name: string } | null };
 type Entry = { id: string; amount: number; kind: string; note: string | null; created_at: string; reservation_id: string | null };
+
 
 function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
   return (
