@@ -57,6 +57,8 @@ export type Database = {
           latitude: number
           location: string
           longitude: number
+          manager_name: string
+          manager_phone: string
           name: string
           photo_url: string | null
           price_per_hour: number
@@ -68,6 +70,8 @@ export type Database = {
           latitude: number
           location: string
           longitude: number
+          manager_name?: string
+          manager_phone?: string
           name: string
           photo_url?: string | null
           price_per_hour: number
@@ -79,6 +83,8 @@ export type Database = {
           latitude?: number
           location?: string
           longitude?: number
+          manager_name?: string
+          manager_phone?: string
           name?: string
           photo_url?: string | null
           price_per_hour?: number
