@@ -184,6 +184,21 @@ export function PitchSidebar({
             </div>
           </div>
 
+          {(pitch.manager_name || pitch.manager_phone) && (
+            <a
+              href={pitch.manager_phone ? `tel:${pitch.manager_phone.replace(/\s/g, "")}` : undefined}
+              className="mb-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3 transition hover:bg-primary/10"
+            >
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">{t("contactManager")}</div>
+                <div className="text-sm font-semibold">{pitch.manager_name || "—"}</div>
+              </div>
+              <div className="text-right text-sm font-bold text-primary">{pitch.manager_phone}</div>
+            </a>
+          )}
+
+
+
           <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold">
             <Clock className="h-4 w-4" /> {t("timeSlots")}
           </h3>
