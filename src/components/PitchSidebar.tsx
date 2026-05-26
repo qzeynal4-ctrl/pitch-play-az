@@ -74,16 +74,12 @@ export function PitchSidebar({
   const reservedMap = new Map(reservations.map((r) => [r.start_hour, r]));
 
   const handleReserve = (hour: number) => {
-    if (!user) {
-      toast(t("loginRequired"));
-      navigate({ to: "/login" });
-      return;
-    }
     setReserveSlot(hour);
     setPaymentPct(40);
     setStep("summary");
     setCard({ number: "", holder: "", expiry: "", cvc: "" });
   };
+
 
   const total = pitch.price_per_hour;
   const amount = ((total * paymentPct) / 100).toFixed(2);
