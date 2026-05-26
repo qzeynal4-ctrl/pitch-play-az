@@ -1,23 +1,27 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarCheck, Users, DollarSign, Clock, Plus, Trash2, Pencil, Wallet, TrendingUp, BarChart3, Eye } from "lucide-react";
+import { CalendarCheck, Users, DollarSign, Plus, Trash2, Pencil, Wallet, TrendingUp, BarChart3, Eye, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { ClientOnly } from "@/components/ClientOnly";
+import { lazy, Suspense } from "react";
+
+const PitchPickerMap = lazy(() => import("@/components/PitchPickerMap").then(m => ({ default: m.PitchPickerMap })));
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
 type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null };
-type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null };
+type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null; manager_name?: string; manager_phone?: string };
 type Resv = { id: string; pitch_id: string; user_id: string; reservation_date: string; start_hour: number; end_hour: number; total_cost: number; amount_paid: number; payment_percentage: number; status: string; user_name: string; pitches: { name: string } | null };
 type Entry = { id: string; amount: number; kind: string; note: string | null; created_at: string; reservation_id: string | null };
+
 
 function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
   return (
@@ -36,7 +40,6 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
 }
 
 function Admin() {
-  const { isAdmin, loading } = useAuth();
   const { t } = useI18n();
   const [users, setUsers] = useState<Profile[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -62,7 +65,18 @@ function Admin() {
     setEntries((e as Entry[]) || []);
   };
 
-  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+  useEffect(() => {
+    load();
+    // Real-time refresh: any insert/update on reservations or balance entries refetches.
+    const ch = supabase
+      .channel("admin-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_balance_entries" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "pitches" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const today = new Date().toISOString().slice(0, 10);
   const activeResvs = useMemo(() => resvs.filter((r) => r.status !== "cancelled"), [resvs]);
@@ -83,20 +97,7 @@ function Admin() {
     return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
   }, [pitches, activeResvs]);
 
-  if (loading) return <div className="p-8">…</div>;
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-xl font-bold">Forbidden</h1>
-            <Link to="/" className="mt-2 inline-block text-primary underline">Go home</Link>
-          </div>
-        </main>
-      </div>
-    );
-  }
+
 
   const filteredUsers = users.filter(u => `${u.name} ${u.surname} ${u.email} ${u.phone}`.toLowerCase().includes(search.toLowerCase()));
   const filteredResvs = resvs.filter(r => `${r.user_name} ${r.pitches?.name}`.toLowerCase().includes(search.toLowerCase()));
@@ -111,6 +112,8 @@ function Admin() {
       price_per_hour: Number(editingPitch.price_per_hour) || 0,
       photo_url: editingPitch.photo_url || null,
       description: editingPitch.description || null,
+      manager_name: editingPitch.manager_name || "Stadion Meneceri",
+      manager_phone: editingPitch.manager_phone || "+994 50 000 00 00",
     };
     const { error } = editingPitch.id
       ? await supabase.from("pitches").update(payload).eq("id", editingPitch.id)
@@ -120,6 +123,7 @@ function Admin() {
     setEditingPitch(null);
     load();
   };
+
 
   const deletePitch = async (id: string) => {
     const { error } = await supabase.from("pitches").delete().eq("id", id);
@@ -318,23 +322,42 @@ function Admin() {
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingPitch({})}><Plus className="mr-1 h-4 w-4" />{t("addPitch")}</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                   <DialogHeader><DialogTitle>{editingPitch?.id ? t("edit") : t("addPitch")}</DialogTitle></DialogHeader>
                   {editingPitch && (
                     <div className="space-y-2">
                       <div><Label>{t("name")}</Label><Input value={editingPitch.name || ""} onChange={(e) => setEditingPitch({...editingPitch, name: e.target.value})} /></div>
                       <div><Label>{t("location")}</Label><Input value={editingPitch.location || ""} onChange={(e) => setEditingPitch({...editingPitch, location: e.target.value})} /></div>
+
+                      <div>
+                        <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t("pickOnMap")}</Label>
+                        <ClientOnly>
+                          <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
+                            <PitchPickerMap
+                              lat={editingPitch.latitude ?? null}
+                              lng={editingPitch.longitude ?? null}
+                              onPick={(lat, lng) => setEditingPitch({ ...editingPitch, latitude: lat, longitude: lng })}
+                            />
+                          </Suspense>
+                        </ClientOnly>
+                        <p className="mt-1 text-xs text-muted-foreground">{t("clickMapHint")}</p>
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div><Label>{t("latitude")}</Label><Input type="number" step="0.0001" value={editingPitch.latitude ?? ""} onChange={(e) => setEditingPitch({...editingPitch, latitude: Number(e.target.value)})} /></div>
                         <div><Label>{t("longitude")}</Label><Input type="number" step="0.0001" value={editingPitch.longitude ?? ""} onChange={(e) => setEditingPitch({...editingPitch, longitude: Number(e.target.value)})} /></div>
                       </div>
                       <div><Label>{t("pricePerHour")} (AZN)</Label><Input type="number" value={editingPitch.price_per_hour ?? ""} onChange={(e) => setEditingPitch({...editingPitch, price_per_hour: Number(e.target.value)})} /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>{t("managerName")}</Label><Input value={editingPitch.manager_name || ""} onChange={(e) => setEditingPitch({...editingPitch, manager_name: e.target.value})} placeholder="Elvin Məmmədov" /></div>
+                        <div><Label>{t("managerPhone")}</Label><Input value={editingPitch.manager_phone || ""} onChange={(e) => setEditingPitch({...editingPitch, manager_phone: e.target.value})} placeholder="+994 50 123 45 67" /></div>
+                      </div>
                       <div><Label>{t("photoUrl")}</Label><Input value={editingPitch.photo_url || ""} onChange={(e) => setEditingPitch({...editingPitch, photo_url: e.target.value})} /></div>
                       <div><Label>{t("description")}</Label><Input value={editingPitch.description || ""} onChange={(e) => setEditingPitch({...editingPitch, description: e.target.value})} /></div>
                       <Button onClick={savePitch} className="w-full">{t("save")}</Button>
                     </div>
                   )}
                 </DialogContent>
+
               </Dialog>
             </div>
             <div className="overflow-x-auto rounded-xl border bg-card">

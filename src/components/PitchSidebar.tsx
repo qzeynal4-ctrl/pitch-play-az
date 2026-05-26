@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -20,7 +20,10 @@ type Pitch = {
   price_per_hour: number;
   photo_url: string | null;
   description: string | null;
+  manager_name?: string | null;
+  manager_phone?: string | null;
 };
+
 
 type Reservation = {
   id: string;
@@ -42,7 +45,7 @@ export function PitchSidebar({
 }) {
   const { t } = useI18n();
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
+  
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,16 +74,12 @@ export function PitchSidebar({
   const reservedMap = new Map(reservations.map((r) => [r.start_hour, r]));
 
   const handleReserve = (hour: number) => {
-    if (!user) {
-      toast(t("loginRequired"));
-      navigate({ to: "/login" });
-      return;
-    }
     setReserveSlot(hour);
     setPaymentPct(40);
     setStep("summary");
     setCard({ number: "", holder: "", expiry: "", cvc: "" });
   };
+
 
   const total = pitch.price_per_hour;
   const amount = ((total * paymentPct) / 100).toFixed(2);
@@ -99,12 +98,23 @@ export function PitchSidebar({
     /^\d{3,4}$/.test(card.cvc);
 
   const submitReservation = async () => {
-    if (reserveSlot == null || !user) return;
+    if (reserveSlot == null) return;
     setStep("processing");
-    // Simulate payment
+    // Demo: simulate card payment bypass
     await new Promise((r) => setTimeout(r, 1400));
+    // Guest demo: synthesise a stable per-browser uuid so reservations persist & display
+    let guestId = typeof window !== "undefined" ? window.localStorage.getItem("demo_guest_id") : null;
+    if (!guestId) {
+      guestId = crypto.randomUUID();
+      if (typeof window !== "undefined") window.localStorage.setItem("demo_guest_id", guestId);
+    }
+    const uid = user?.id ?? guestId;
+    const displayName =
+      (profile?.name && `${profile.name} ${profile?.surname ?? ""}`.trim()) ||
+      user?.email?.split("@")[0] ||
+      (card.holder.trim() || "Qonaq istifadəçi");
     const { error } = await supabase.from("reservations").insert({
-      user_id: user.id,
+      user_id: uid,
       pitch_id: pitch.id,
       reservation_date: date,
       start_hour: reserveSlot,
@@ -113,13 +123,15 @@ export function PitchSidebar({
       payment_percentage: paymentPct,
       amount_paid: Number(amount),
       status: "confirmed",
-      user_name: profile?.name || user.email?.split("@")[0] || "User",
+      user_name: displayName,
     });
     if (error) {
       toast.error(error.message);
       setStep("card");
       return;
     }
+
+
     setStep("done");
     toast.success(t("paymentSuccess"));
     const { data } = await supabase
@@ -171,6 +183,21 @@ export function PitchSidebar({
               />
             </div>
           </div>
+
+          {(pitch.manager_name || pitch.manager_phone) && (
+            <a
+              href={pitch.manager_phone ? `tel:${pitch.manager_phone.replace(/\s/g, "")}` : undefined}
+              className="mb-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3 transition hover:bg-primary/10"
+            >
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">{t("contactManager")}</div>
+                <div className="text-sm font-semibold">{pitch.manager_name || "—"}</div>
+              </div>
+              <div className="text-right text-sm font-bold text-primary">{pitch.manager_phone}</div>
+            </a>
+          )}
+
+
 
           <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold">
             <Clock className="h-4 w-4" /> {t("timeSlots")}
