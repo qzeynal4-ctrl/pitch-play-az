@@ -131,11 +131,7 @@ export function PitchSidebar({
       return;
     }
 
-    if (error) {
-      toast.error(error.message);
-      setStep("card");
-      return;
-    }
+
     setStep("done");
     toast.success(t("paymentSuccess"));
     const { data } = await supabase
