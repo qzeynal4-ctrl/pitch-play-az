@@ -112,6 +112,8 @@ function Admin() {
       price_per_hour: Number(editingPitch.price_per_hour) || 0,
       photo_url: editingPitch.photo_url || null,
       description: editingPitch.description || null,
+      manager_name: editingPitch.manager_name || "Stadion Meneceri",
+      manager_phone: editingPitch.manager_phone || "+994 50 000 00 00",
     };
     const { error } = editingPitch.id
       ? await supabase.from("pitches").update(payload).eq("id", editingPitch.id)
@@ -121,6 +123,7 @@ function Admin() {
     setEditingPitch(null);
     load();
   };
+
 
   const deletePitch = async (id: string) => {
     const { error } = await supabase.from("pitches").delete().eq("id", id);
