@@ -185,6 +185,13 @@ const dict = {
     processing: "Processing payment...",
     pitchList: "Pitch list",
     noResults: "No results",
+    managerName: "Manager name",
+    managerPhone: "Manager phone",
+    contactManager: "Contact manager",
+    pickOnMap: "Pick location on map",
+    clickMapHint: "Click on the map to place pin",
+    demoPaymentNote: "Demo mode – card not validated",
+
     heroTitle: "Book football pitches by the hour",
     heroSub: "Find the best pitches in Baku on the map, see real-time slots, and reserve in seconds.",
     overview: "Overview",
