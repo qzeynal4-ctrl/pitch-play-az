@@ -20,7 +20,10 @@ type Pitch = {
   price_per_hour: number;
   photo_url: string | null;
   description: string | null;
+  manager_name?: string | null;
+  manager_phone?: string | null;
 };
+
 
 type Reservation = {
   id: string;
