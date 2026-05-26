@@ -45,7 +45,7 @@ export function PitchSidebar({
 }) {
   const { t } = useI18n();
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
+  
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
