@@ -78,6 +78,13 @@ const dict = {
     processing: "Ödəniş işlənir...",
     pitchList: "Meydançalar siyahısı",
     noResults: "Nəticə yoxdur",
+    managerName: "Menecer adı",
+    managerPhone: "Menecer telefonu",
+    contactManager: "Menecerlə əlaqə",
+    pickOnMap: "Xəritədən yerini seç",
+    clickMapHint: "Yerləşdirmək üçün xəritədə kliklə",
+    demoPaymentNote: "Demo rejimi – kart yoxlanılmır",
+
     heroTitle: "Saat hesabı futbol meydançası rezerv et",
     heroSub: "Bakıda ən yaxşı meydançaları xəritədə tap, real vaxt slotlarını gör və saniyələrlə rezerv et.",
     overview: "Ümumi baxış",
