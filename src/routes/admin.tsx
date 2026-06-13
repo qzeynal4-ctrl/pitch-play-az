@@ -17,10 +17,11 @@ const PitchPickerMap = lazy(() => import("@/components/PitchPickerMap").then(m =
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
-type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null };
+type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null; role?: string; status?: string; username?: string | null; business_name?: string | null; pitch_id?: string | null; rejection_reason?: string | null; pitch_location?: string | null; pitch_description?: string | null };
 type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null; manager_name?: string; manager_phone?: string };
 type Resv = { id: string; pitch_id: string; user_id: string; reservation_date: string; start_hour: number; end_hour: number; total_cost: number; amount_paid: number; payment_percentage: number; status: string; user_name: string; pitches: { name: string } | null };
 type Entry = { id: string; amount: number; kind: string; note: string | null; created_at: string; reservation_id: string | null };
+type Cashout = { id: string; owner_id: string; amount: number; status: string; note: string | null; admin_note: string | null; created_at: string };
 
 
 function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
