@@ -17,10 +17,11 @@ const PitchPickerMap = lazy(() => import("@/components/PitchPickerMap").then(m =
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
-type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null };
+type Profile = { id: string; name: string; surname: string; email: string; phone: string; created_at: string; last_login: string | null; role?: string; status?: string; username?: string | null; business_name?: string | null; pitch_id?: string | null; rejection_reason?: string | null; pitch_location?: string | null; pitch_description?: string | null };
 type Pitch = { id: string; name: string; location: string; latitude: number; longitude: number; price_per_hour: number; photo_url: string | null; description: string | null; manager_name?: string; manager_phone?: string };
 type Resv = { id: string; pitch_id: string; user_id: string; reservation_date: string; start_hour: number; end_hour: number; total_cost: number; amount_paid: number; payment_percentage: number; status: string; user_name: string; pitches: { name: string } | null };
 type Entry = { id: string; amount: number; kind: string; note: string | null; created_at: string; reservation_id: string | null };
+type Cashout = { id: string; owner_id: string; amount: number; status: string; note: string | null; admin_note: string | null; created_at: string };
 
 
 function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
@@ -45,24 +46,30 @@ function Admin() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [resvs, setResvs] = useState<Resv[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [cashouts, setCashouts] = useState<Cashout[]>([]);
   const [search, setSearch] = useState("");
   const [editingPitch, setEditingPitch] = useState<Partial<Pitch> | null>(null);
   const [editingResv, setEditingResv] = useState<Resv | null>(null);
   const [viewUser, setViewUser] = useState<Profile | null>(null);
+  const [viewOwner, setViewOwner] = useState<Profile | null>(null);
+  const [rejectingOwner, setRejectingOwner] = useState<Profile | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [withdrawNote, setWithdrawNote] = useState("");
 
   const load = async () => {
-    const [{ data: u }, { data: p }, { data: r }, { data: e }] = await Promise.all([
+    const [{ data: u }, { data: p }, { data: r }, { data: e }, { data: c }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("pitches").select("*").order("name"),
       supabase.from("reservations").select("*,pitches(name)").order("created_at", { ascending: false }),
       supabase.from("admin_balance_entries").select("*").order("created_at", { ascending: false }),
+      supabase.from("cashout_requests").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers((u as Profile[]) || []);
     setPitches((p as Pitch[]) || []);
     setResvs((r as unknown as Resv[]) || []);
     setEntries((e as Entry[]) || []);
+    setCashouts((c as Cashout[]) || []);
   };
 
   useEffect(() => {
@@ -74,6 +81,7 @@ function Admin() {
       .on("postgres_changes", { event: "*", schema: "public", table: "admin_balance_entries" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "pitches" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "cashout_requests" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -170,6 +178,35 @@ function Admin() {
   const userResvs = viewUser ? resvs.filter(r => r.user_id === viewUser.id) : [];
   const userSpent = userResvs.filter(r => r.status !== "cancelled").reduce((s, r) => s + Number(r.amount_paid), 0);
 
+  const owners = users.filter(u => u.role === "owner");
+  const realUsers = users.filter(u => !u.role || u.role === "user");
+
+  const approveOwner = async (o: Profile) => {
+    const { error } = await supabase.from("profiles").update({ status: "approved" }).eq("id", o.id);
+    if (error) return toast.error(error.message);
+    toast.success("Təsdiqləndi");
+  };
+  const rejectOwner = async () => {
+    if (!rejectingOwner) return;
+    const { error } = await supabase.from("profiles")
+      .update({ status: "rejected", rejection_reason: rejectReason || null })
+      .eq("id", rejectingOwner.id);
+    if (error) return toast.error(error.message);
+    toast.success("Rədd edildi");
+    setRejectingOwner(null); setRejectReason("");
+  };
+  const setCashoutStatus = async (id: string, status: "paid" | "rejected") => {
+    const { error } = await supabase.from("cashout_requests")
+      .update({ status, processed_at: new Date().toISOString() }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Yeniləndi");
+  };
+
+  const ownerResvs = viewOwner?.pitch_id ? resvs.filter(r => r.pitch_id === viewOwner.pitch_id) : [];
+  const ownerEarnings = ownerResvs.filter(r => r.status !== "cancelled").reduce((s, r) => s + Number(r.amount_paid) * 0.9, 0);
+  const ownerCashouts = viewOwner ? cashouts.filter(c => c.owner_id === viewOwner.id) : [];
+
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -190,6 +227,8 @@ function Admin() {
               <TabsTrigger value="overview"><BarChart3 className="mr-1 h-4 w-4" />{t("overview")}</TabsTrigger>
               <TabsTrigger value="reservations">{t("reservations")}</TabsTrigger>
               <TabsTrigger value="users">{t("users")}</TabsTrigger>
+              <TabsTrigger value="owners">Owners</TabsTrigger>
+              <TabsTrigger value="cashouts">Cashouts</TabsTrigger>
               <TabsTrigger value="pitches">{t("pitches")}</TabsTrigger>
               <TabsTrigger value="balance"><Wallet className="mr-1 h-4 w-4" />{t("balance")}</TabsTrigger>
             </TabsList>
@@ -294,7 +333,7 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((u) => {
+                  {filteredUsers.filter(u => !u.role || u.role === "user").map((u) => {
                     const ur = resvs.filter(r => r.user_id === u.id && r.status !== "cancelled");
                     const sp = ur.reduce((s, r) => s + Number(r.amount_paid), 0);
                     return (
@@ -310,6 +349,98 @@ function Admin() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          {/* OWNERS */}
+          <TabsContent value="owners">
+            <div className="overflow-x-auto rounded-xl border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="p-3">Ad</th>
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Username</th>
+                    <th className="p-3">Biznes</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {owners.filter(o => `${o.name} ${o.email} ${o.username} ${o.business_name}`.toLowerCase().includes(search.toLowerCase())).map(o => (
+                    <tr key={o.id} className="border-t">
+                      <td className="p-3 font-medium">{o.name} {o.surname}</td>
+                      <td className="p-3">{o.email}</td>
+                      <td className="p-3">@{o.username || "—"}</td>
+                      <td className="p-3">{o.business_name || "—"}</td>
+                      <td className="p-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${
+                          o.status === "approved" ? "bg-success/15 text-success" :
+                          o.status === "rejected" ? "bg-destructive/15 text-destructive" :
+                          "bg-warning/15 text-warning-foreground"
+                        }`}>{o.status}</span>
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        <Button variant="ghost" size="sm" onClick={() => setViewOwner(o)}><Eye className="mr-1 h-4 w-4" />Detail</Button>
+                        {o.status !== "approved" && (
+                          <Button variant="ghost" size="sm" className="text-success" onClick={() => approveOwner(o)}>Approve</Button>
+                        )}
+                        {o.status !== "rejected" && (
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setRejectingOwner(o)}>Reject</Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!owners.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Owner yoxdur</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          {/* CASHOUTS */}
+          <TabsContent value="cashouts">
+            <div className="overflow-x-auto rounded-xl border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="p-3">Tarix</th>
+                    <th className="p-3">Owner</th>
+                    <th className="p-3">Məbləğ</th>
+                    <th className="p-3">Qeyd</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashouts.map(c => {
+                    const o = users.find(u => u.id === c.owner_id);
+                    return (
+                      <tr key={c.id} className="border-t">
+                        <td className="p-3">{new Date(c.created_at).toLocaleDateString()}</td>
+                        <td className="p-3">{o?.name} {o?.surname} <span className="text-xs text-muted-foreground">@{o?.username}</span></td>
+                        <td className="p-3 font-semibold">{Number(c.amount).toFixed(2)} AZN</td>
+                        <td className="p-3 text-muted-foreground">{c.note || "—"}</td>
+                        <td className="p-3">
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${
+                            c.status === "paid" ? "bg-success/15 text-success" :
+                            c.status === "rejected" ? "bg-destructive/15 text-destructive" :
+                            "bg-warning/15 text-warning-foreground"
+                          }`}>{c.status}</span>
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          {c.status === "pending" && (
+                            <>
+                              <Button variant="ghost" size="sm" className="text-success" onClick={() => setCashoutStatus(c.id, "paid")}>Mark paid</Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setCashoutStatus(c.id, "rejected")}>Reject</Button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!cashouts.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Sorğu yoxdur</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -496,6 +627,63 @@ function Admin() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Owner detail dialog */}
+      <Dialog open={!!viewOwner} onOpenChange={(o) => !o && setViewOwner(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Owner: {viewOwner?.business_name || viewOwner?.name}</DialogTitle></DialogHeader>
+          {viewOwner && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-accent/50 p-3">
+                <div><div className="text-xs text-muted-foreground">Ad</div><div className="font-semibold">{viewOwner.name} {viewOwner.surname}</div></div>
+                <div><div className="text-xs text-muted-foreground">Email</div><div className="font-semibold">{viewOwner.email}</div></div>
+                <div><div className="text-xs text-muted-foreground">Username</div><div className="font-semibold">@{viewOwner.username}</div></div>
+                <div><div className="text-xs text-muted-foreground">Telefon</div><div className="font-semibold">{viewOwner.phone || "—"}</div></div>
+                <div><div className="text-xs text-muted-foreground">Status</div><div className="font-semibold">{viewOwner.status}</div></div>
+                <div><div className="text-xs text-muted-foreground">Qazanc (90%)</div><div className="font-bold text-primary">{ownerEarnings.toFixed(2)} AZN</div></div>
+              </div>
+              <div>
+                <div className="mb-1 font-semibold">Rezervlər ({ownerResvs.length})</div>
+                <div className="max-h-40 overflow-y-auto rounded border">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50"><tr><th className="p-2 text-left">Tarix</th><th className="p-2 text-left">Saat</th><th className="p-2 text-left">User</th><th className="p-2 text-right">Məbləğ</th></tr></thead>
+                    <tbody>
+                      {ownerResvs.map(r => (
+                        <tr key={r.id} className="border-t"><td className="p-2">{r.reservation_date}</td><td className="p-2">{r.start_hour}:00</td><td className="p-2">{r.user_name}</td><td className="p-2 text-right">{r.amount_paid} AZN</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 font-semibold">Cashout sorğuları</div>
+                <div className="space-y-1">
+                  {ownerCashouts.map(c => (
+                    <div key={c.id} className="flex items-center justify-between rounded border p-2 text-xs">
+                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                      <span className="font-semibold">{Number(c.amount).toFixed(2)} AZN</span>
+                      <span>{c.status}</span>
+                    </div>
+                  ))}
+                  {!ownerCashouts.length && <p className="text-xs text-muted-foreground">Yoxdur</p>}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject owner dialog */}
+      <Dialog open={!!rejectingOwner} onOpenChange={(o) => { if (!o) { setRejectingOwner(null); setRejectReason(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Owner-i rədd et</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Səbəb (ixtiyari)</Label>
+            <Input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+            <Button variant="destructive" onClick={rejectOwner} className="w-full">Rədd et</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

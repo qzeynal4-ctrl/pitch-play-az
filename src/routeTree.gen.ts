@@ -15,6 +15,9 @@ import { Route as MyReservationsRouteImport } from './routes/my-reservations'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
+import { Route as OwnerLoginRouteImport } from './routes/owner.login'
+import { Route as OwnerDashboardUsernameRouteImport } from './routes/owner.dashboard.$username'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -46,6 +49,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
+  id: '/owner/register',
+  path: '/owner/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/owner/login',
+  path: '/owner/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerDashboardUsernameRoute = OwnerDashboardUsernameRouteImport.update({
+  id: '/owner/dashboard/$username',
+  path: '/owner/dashboard/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +72,9 @@ export interface FileRoutesByFullPath {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/dashboard/$username': typeof OwnerDashboardUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +83,9 @@ export interface FileRoutesByTo {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/dashboard/$username': typeof OwnerDashboardUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +95,9 @@ export interface FileRoutesById {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
+  '/owner/dashboard/$username': typeof OwnerDashboardUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +108,20 @@ export interface FileRouteTypes {
     | '/my-reservations'
     | '/profile'
     | '/register'
+    | '/owner/login'
+    | '/owner/register'
+    | '/owner/dashboard/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/login' | '/my-reservations' | '/profile' | '/register'
+  to:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/my-reservations'
+    | '/profile'
+    | '/register'
+    | '/owner/login'
+    | '/owner/register'
+    | '/owner/dashboard/$username'
   id:
     | '__root__'
     | '/'
@@ -91,6 +130,9 @@ export interface FileRouteTypes {
     | '/my-reservations'
     | '/profile'
     | '/register'
+    | '/owner/login'
+    | '/owner/register'
+    | '/owner/dashboard/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +142,9 @@ export interface RootRouteChildren {
   MyReservationsRoute: typeof MyReservationsRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
+  OwnerLoginRoute: typeof OwnerLoginRoute
+  OwnerRegisterRoute: typeof OwnerRegisterRoute
+  OwnerDashboardUsernameRoute: typeof OwnerDashboardUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +191,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner/register': {
+      id: '/owner/register'
+      path: '/owner/register'
+      fullPath: '/owner/register'
+      preLoaderRoute: typeof OwnerRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/login': {
+      id: '/owner/login'
+      path: '/owner/login'
+      fullPath: '/owner/login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/dashboard/$username': {
+      id: '/owner/dashboard/$username'
+      path: '/owner/dashboard/$username'
+      fullPath: '/owner/dashboard/$username'
+      preLoaderRoute: typeof OwnerDashboardUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -156,6 +222,9 @@ const rootRouteChildren: RootRouteChildren = {
   MyReservationsRoute: MyReservationsRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
+  OwnerLoginRoute: OwnerLoginRoute,
+  OwnerRegisterRoute: OwnerRegisterRoute,
+  OwnerDashboardUsernameRoute: OwnerDashboardUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
