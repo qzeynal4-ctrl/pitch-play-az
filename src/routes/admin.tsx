@@ -58,16 +58,18 @@ function Admin() {
   const [withdrawNote, setWithdrawNote] = useState("");
 
   const load = async () => {
-    const [{ data: u }, { data: p }, { data: r }, { data: e }] = await Promise.all([
+    const [{ data: u }, { data: p }, { data: r }, { data: e }, { data: c }] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("pitches").select("*").order("name"),
       supabase.from("reservations").select("*,pitches(name)").order("created_at", { ascending: false }),
       supabase.from("admin_balance_entries").select("*").order("created_at", { ascending: false }),
+      supabase.from("cashout_requests").select("*").order("created_at", { ascending: false }),
     ]);
     setUsers((u as Profile[]) || []);
     setPitches((p as Pitch[]) || []);
     setResvs((r as unknown as Resv[]) || []);
     setEntries((e as Entry[]) || []);
+    setCashouts((c as Cashout[]) || []);
   };
 
   useEffect(() => {
