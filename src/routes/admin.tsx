@@ -178,6 +178,35 @@ function Admin() {
   const userResvs = viewUser ? resvs.filter(r => r.user_id === viewUser.id) : [];
   const userSpent = userResvs.filter(r => r.status !== "cancelled").reduce((s, r) => s + Number(r.amount_paid), 0);
 
+  const owners = users.filter(u => u.role === "owner");
+  const realUsers = users.filter(u => !u.role || u.role === "user");
+
+  const approveOwner = async (o: Profile) => {
+    const { error } = await supabase.from("profiles").update({ status: "approved" }).eq("id", o.id);
+    if (error) return toast.error(error.message);
+    toast.success("Təsdiqləndi");
+  };
+  const rejectOwner = async () => {
+    if (!rejectingOwner) return;
+    const { error } = await supabase.from("profiles")
+      .update({ status: "rejected", rejection_reason: rejectReason || null })
+      .eq("id", rejectingOwner.id);
+    if (error) return toast.error(error.message);
+    toast.success("Rədd edildi");
+    setRejectingOwner(null); setRejectReason("");
+  };
+  const setCashoutStatus = async (id: string, status: "paid" | "rejected") => {
+    const { error } = await supabase.from("cashout_requests")
+      .update({ status, processed_at: new Date().toISOString() }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Yeniləndi");
+  };
+
+  const ownerResvs = viewOwner?.pitch_id ? resvs.filter(r => r.pitch_id === viewOwner.pitch_id) : [];
+  const ownerEarnings = ownerResvs.filter(r => r.status !== "cancelled").reduce((s, r) => s + Number(r.amount_paid) * 0.9, 0);
+  const ownerCashouts = viewOwner ? cashouts.filter(c => c.owner_id === viewOwner.id) : [];
+
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
