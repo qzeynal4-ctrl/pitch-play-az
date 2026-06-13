@@ -46,10 +46,14 @@ function Admin() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [resvs, setResvs] = useState<Resv[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [cashouts, setCashouts] = useState<Cashout[]>([]);
   const [search, setSearch] = useState("");
   const [editingPitch, setEditingPitch] = useState<Partial<Pitch> | null>(null);
   const [editingResv, setEditingResv] = useState<Resv | null>(null);
   const [viewUser, setViewUser] = useState<Profile | null>(null);
+  const [viewOwner, setViewOwner] = useState<Profile | null>(null);
+  const [rejectingOwner, setRejectingOwner] = useState<Profile | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [withdrawNote, setWithdrawNote] = useState("");
 
