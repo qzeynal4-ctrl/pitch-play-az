@@ -81,6 +81,7 @@ function Admin() {
       .on("postgres_changes", { event: "*", schema: "public", table: "admin_balance_entries" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "pitches" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "cashout_requests" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
