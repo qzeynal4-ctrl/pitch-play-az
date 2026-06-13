@@ -354,6 +354,98 @@ function Admin() {
             </div>
           </TabsContent>
 
+          {/* OWNERS */}
+          <TabsContent value="owners">
+            <div className="overflow-x-auto rounded-xl border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="p-3">Ad</th>
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Username</th>
+                    <th className="p-3">Biznes</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {owners.filter(o => `${o.name} ${o.email} ${o.username} ${o.business_name}`.toLowerCase().includes(search.toLowerCase())).map(o => (
+                    <tr key={o.id} className="border-t">
+                      <td className="p-3 font-medium">{o.name} {o.surname}</td>
+                      <td className="p-3">{o.email}</td>
+                      <td className="p-3">@{o.username || "—"}</td>
+                      <td className="p-3">{o.business_name || "—"}</td>
+                      <td className="p-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${
+                          o.status === "approved" ? "bg-success/15 text-success" :
+                          o.status === "rejected" ? "bg-destructive/15 text-destructive" :
+                          "bg-warning/15 text-warning-foreground"
+                        }`}>{o.status}</span>
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        <Button variant="ghost" size="sm" onClick={() => setViewOwner(o)}><Eye className="mr-1 h-4 w-4" />Detail</Button>
+                        {o.status !== "approved" && (
+                          <Button variant="ghost" size="sm" className="text-success" onClick={() => approveOwner(o)}>Approve</Button>
+                        )}
+                        {o.status !== "rejected" && (
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setRejectingOwner(o)}>Reject</Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!owners.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Owner yoxdur</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          {/* CASHOUTS */}
+          <TabsContent value="cashouts">
+            <div className="overflow-x-auto rounded-xl border bg-card">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="p-3">Tarix</th>
+                    <th className="p-3">Owner</th>
+                    <th className="p-3">Məbləğ</th>
+                    <th className="p-3">Qeyd</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashouts.map(c => {
+                    const o = users.find(u => u.id === c.owner_id);
+                    return (
+                      <tr key={c.id} className="border-t">
+                        <td className="p-3">{new Date(c.created_at).toLocaleDateString()}</td>
+                        <td className="p-3">{o?.name} {o?.surname} <span className="text-xs text-muted-foreground">@{o?.username}</span></td>
+                        <td className="p-3 font-semibold">{Number(c.amount).toFixed(2)} AZN</td>
+                        <td className="p-3 text-muted-foreground">{c.note || "—"}</td>
+                        <td className="p-3">
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${
+                            c.status === "paid" ? "bg-success/15 text-success" :
+                            c.status === "rejected" ? "bg-destructive/15 text-destructive" :
+                            "bg-warning/15 text-warning-foreground"
+                          }`}>{c.status}</span>
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          {c.status === "pending" && (
+                            <>
+                              <Button variant="ghost" size="sm" className="text-success" onClick={() => setCashoutStatus(c.id, "paid")}>Mark paid</Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setCashoutStatus(c.id, "rejected")}>Reject</Button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!cashouts.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Sorğu yoxdur</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
           {/* PITCHES */}
           <TabsContent value="pitches">
             <div className="mb-3 flex justify-end">
