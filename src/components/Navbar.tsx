@@ -64,6 +64,9 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link to="/owner/register" className="hidden text-xs text-muted-foreground hover:text-primary hover:underline sm:inline">
+            Owner?
+          </Link>
           <button
             onClick={() => setLang(lang === "az" ? "en" : "az")}
             className="rounded-md border px-2 py-1 text-xs font-semibold hover:bg-accent"
@@ -71,6 +74,7 @@ export function Navbar() {
           >
             {lang === "az" ? "AZ" : "EN"} / {lang === "az" ? "EN" : "AZ"}
           </button>
+
 
           {user ? (
             <DropdownMenu>
