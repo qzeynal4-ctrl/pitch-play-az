@@ -629,6 +629,63 @@ function Admin() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Owner detail dialog */}
+      <Dialog open={!!viewOwner} onOpenChange={(o) => !o && setViewOwner(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Owner: {viewOwner?.business_name || viewOwner?.name}</DialogTitle></DialogHeader>
+          {viewOwner && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-accent/50 p-3">
+                <div><div className="text-xs text-muted-foreground">Ad</div><div className="font-semibold">{viewOwner.name} {viewOwner.surname}</div></div>
+                <div><div className="text-xs text-muted-foreground">Email</div><div className="font-semibold">{viewOwner.email}</div></div>
+                <div><div className="text-xs text-muted-foreground">Username</div><div className="font-semibold">@{viewOwner.username}</div></div>
+                <div><div className="text-xs text-muted-foreground">Telefon</div><div className="font-semibold">{viewOwner.phone || "—"}</div></div>
+                <div><div className="text-xs text-muted-foreground">Status</div><div className="font-semibold">{viewOwner.status}</div></div>
+                <div><div className="text-xs text-muted-foreground">Qazanc (90%)</div><div className="font-bold text-primary">{ownerEarnings.toFixed(2)} AZN</div></div>
+              </div>
+              <div>
+                <div className="mb-1 font-semibold">Rezervlər ({ownerResvs.length})</div>
+                <div className="max-h-40 overflow-y-auto rounded border">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50"><tr><th className="p-2 text-left">Tarix</th><th className="p-2 text-left">Saat</th><th className="p-2 text-left">User</th><th className="p-2 text-right">Məbləğ</th></tr></thead>
+                    <tbody>
+                      {ownerResvs.map(r => (
+                        <tr key={r.id} className="border-t"><td className="p-2">{r.reservation_date}</td><td className="p-2">{r.start_hour}:00</td><td className="p-2">{r.user_name}</td><td className="p-2 text-right">{r.amount_paid} AZN</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 font-semibold">Cashout sorğuları</div>
+                <div className="space-y-1">
+                  {ownerCashouts.map(c => (
+                    <div key={c.id} className="flex items-center justify-between rounded border p-2 text-xs">
+                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                      <span className="font-semibold">{Number(c.amount).toFixed(2)} AZN</span>
+                      <span>{c.status}</span>
+                    </div>
+                  ))}
+                  {!ownerCashouts.length && <p className="text-xs text-muted-foreground">Yoxdur</p>}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject owner dialog */}
+      <Dialog open={!!rejectingOwner} onOpenChange={(o) => { if (!o) { setRejectingOwner(null); setRejectReason(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Owner-i rədd et</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Səbəb (ixtiyari)</Label>
+            <Input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+            <Button variant="destructive" onClick={rejectOwner} className="w-full">Rədd et</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
