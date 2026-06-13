@@ -49,6 +49,47 @@ export type Database = {
           },
         ]
       }
+      cashout_requests: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          owner_id: string
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id: string
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashout_requests_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pitches: {
         Row: {
           created_at: string
@@ -60,8 +101,11 @@ export type Database = {
           manager_name: string
           manager_phone: string
           name: string
+          owner_id: string | null
           photo_url: string | null
           price_per_hour: number
+          view_count: number
+          visible: boolean
         }
         Insert: {
           created_at?: string
@@ -73,8 +117,11 @@ export type Database = {
           manager_name?: string
           manager_phone?: string
           name: string
+          owner_id?: string | null
           photo_url?: string | null
           price_per_hour: number
+          view_count?: number
+          visible?: boolean
         }
         Update: {
           created_at?: string
@@ -86,40 +133,83 @@ export type Database = {
           manager_name?: string
           manager_phone?: string
           name?: string
+          owner_id?: string | null
           photo_url?: string | null
           price_per_hour?: number
+          view_count?: number
+          visible?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pitches_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
+          business_name: string | null
           created_at: string
           email: string
           id: string
           last_login: string | null
           name: string
           phone: string
+          pitch_description: string | null
+          pitch_id: string | null
+          pitch_location: string | null
+          rejection_reason: string | null
+          role: string
+          status: string
           surname: string
+          username: string | null
         }
         Insert: {
+          business_name?: string | null
           created_at?: string
           email?: string
           id: string
           last_login?: string | null
           name?: string
           phone?: string
+          pitch_description?: string | null
+          pitch_id?: string | null
+          pitch_location?: string | null
+          rejection_reason?: string | null
+          role?: string
+          status?: string
           surname?: string
+          username?: string | null
         }
         Update: {
+          business_name?: string | null
           created_at?: string
           email?: string
           id?: string
           last_login?: string | null
           name?: string
           phone?: string
+          pitch_description?: string | null
+          pitch_id?: string | null
+          pitch_location?: string | null
+          rejection_reason?: string | null
+          role?: string
+          status?: string
           surname?: string
+          username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: false
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -167,6 +257,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "reservations_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: false
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          pitch_id: string
+          rating: number
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          pitch_id: string
+          rating: number
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          pitch_id?: string
+          rating?: number
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_pitch_id_fkey"
             columns: ["pitch_id"]
             isOneToOne: false
             referencedRelation: "pitches"
