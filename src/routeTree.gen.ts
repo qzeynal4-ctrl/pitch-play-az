@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
+import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -52,6 +53,11 @@ const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
   path: '/owner/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/owner/login',
+  path: '/owner/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/my-reservations': typeof MyReservationsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/owner/login': typeof OwnerLoginRoute
   '/owner/register': typeof OwnerRegisterRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/my-reservations'
     | '/profile'
     | '/register'
+    | '/owner/login'
     | '/owner/register'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/my-reservations'
     | '/profile'
     | '/register'
+    | '/owner/login'
     | '/owner/register'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/my-reservations'
     | '/profile'
     | '/register'
+    | '/owner/login'
     | '/owner/register'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   MyReservationsRoute: typeof MyReservationsRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
+  OwnerLoginRoute: typeof OwnerLoginRoute
   OwnerRegisterRoute: typeof OwnerRegisterRoute
 }
 
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner/login': {
+      id: '/owner/login'
+      path: '/owner/login'
+      fullPath: '/owner/login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyReservationsRoute: MyReservationsRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
+  OwnerLoginRoute: OwnerLoginRoute,
   OwnerRegisterRoute: OwnerRegisterRoute,
 }
 export const routeTree = rootRouteImport
