@@ -227,6 +227,8 @@ function Admin() {
               <TabsTrigger value="overview"><BarChart3 className="mr-1 h-4 w-4" />{t("overview")}</TabsTrigger>
               <TabsTrigger value="reservations">{t("reservations")}</TabsTrigger>
               <TabsTrigger value="users">{t("users")}</TabsTrigger>
+              <TabsTrigger value="owners">Owners</TabsTrigger>
+              <TabsTrigger value="cashouts">Cashouts</TabsTrigger>
               <TabsTrigger value="pitches">{t("pitches")}</TabsTrigger>
               <TabsTrigger value="balance"><Wallet className="mr-1 h-4 w-4" />{t("balance")}</TabsTrigger>
             </TabsList>
