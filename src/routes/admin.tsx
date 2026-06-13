@@ -333,7 +333,7 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((u) => {
+                  {filteredUsers.filter(u => !u.role || u.role === "user").map((u) => {
                     const ur = resvs.filter(r => r.user_id === u.id && r.status !== "cancelled");
                     const sp = ur.reduce((s, r) => s + Number(r.amount_paid), 0);
                     return (
